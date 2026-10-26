@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Dixyes\Gem\Support\CpuAffinity;
+use Dixyes\Gem\Thread\ThreadConfig;
 
 /*
  * Entry point of the single-file demo.
@@ -100,7 +100,7 @@ if ($command === 'version') {
 
     $threads = 'unknown';
     try {
-        $threads = (string) count(CpuAffinity::physicalCpus('auto'));
+        $threads = (string) ThreadConfig::defaultThreads();
     } catch (Throwable) {
         // keep the unknown marker, a missing topology is not a fatal error here
     }

@@ -99,12 +99,16 @@ echo "build-micro: running configure"
     --enable-toy \
     "${swow_args[@]}"
 
-echo "build-micro: running make -j$jobs micro"
-make_args=(-j"$jobs" micro)
-if [ -n "${EXTRA_LIBS:-}" ]; then
-    make_args+=("EXTRA_LIBS=$EXTRA_LIBS")
+if [ -n "${STATIC_LIBS_TAIL:-}" ]; then
+    echo "build-micro: appending static library tail"
+    awk -v extra="$STATIC_LIBS_TAIL" '
+        /^EXTRA_LIBS =/ { $0 = $0 " " extra }
+        { print }
+    ' Makefile > Makefile.static && mv Makefile.static Makefile
 fi
-make "${make_args[@]}"
+
+echo "build-micro: running make -j$jobs micro"
+make -j"$jobs" micro
 
 [ -x "$tree/sapi/micro/micro.sfx" ] || fail "micro.sfx was not produced"
 echo "build-micro: $tree/sapi/micro/micro.sfx"

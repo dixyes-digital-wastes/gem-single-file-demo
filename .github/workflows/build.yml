@@ -23,12 +23,19 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Check out lwmbs
+        uses: actions/checkout@v4
+        with:
+          repository: dixyes/lwmbs
+          ref: 49e825a
+          path: lwmbs
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential autoconf bison re2c patch pkg-config \
-            libffi-dev zlib1g-dev
+            build-essential autoconf automake bison cmake flex libtool \
+            re2c patch pkg-config libffi-dev zlib1g-dev
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -36,8 +43,28 @@ jobs:
           php-version: '8.5'
           coverage: none
 
+      - name: Build static dependencies
+        run: |
+          mkdir -p build
+          cd build
+          php ../lwmbs/fetch_source.php \
+            "zlib,openssl,nghttp2,libssh2,curl,libffi" "" \
+            --phpVer=8.4 --versionFile=./versionFile
+          php ../lwmbs/build_libs.php \
+            "zlib,openssl,nghttp2,libssh2,curl,libffi" \
+            --arch=x86_64 --noSystem --fresh
+
       - name: Build micro.sfx
-        run: ./build-micro.sh
+        env:
+          SWOW_SSL: '1'
+          SWOW_CURL: '1'
+        run: |
+          export PKG_CONFIG_PATH="$PWD/build/lib/pkgconfig"
+          export CFLAGS="-I$PWD/build/include"
+          export LDFLAGS="-L$PWD/build/lib"
+          export EXTRA_LIBS="-Wl,--start-group $(find "$PWD/build/lib" -name '*.a' -print | tr '\n' ' ') -Wl,--end-group -ldl -lpthread -lresolv"
+          export STATIC_LIBS_TAIL="-L$PWD/build/lib -lnghttp2 -lssh2 -lcrypto -lssl"
+          ./build-micro.sh
 
       - name: Build the phar
         run: php -d phar.readonly=0 build-phar.php
@@ -88,6 +115,9 @@ jobs:
         run: |
           mkdir -p build
           cd build
+          php ../lwmbs/fetch_source.php \
+            "zlib,openssl,nghttp2,libssh2,curl,libffi" "" \
+            --phpVer=8.4 --versionFile=./versionFile
           php ../lwmbs/build_libs.php \
             "zlib,openssl,nghttp2,libssh2,curl,libffi" \
             --arch="$(uname -m)" --fresh
@@ -102,6 +132,7 @@ jobs:
           export CFLAGS="-I$PWD/build/include"
           export LDFLAGS="-L$PWD/build/lib"
           export EXTRA_LIBS="-Wl,-all_load $(find "$PWD/build/lib" -name '*.a' -print | tr '\n' ' ') -lresolv"
+          export STATIC_LIBS_TAIL="-L$PWD/build/lib -lnghttp2 -lssh2 -lcrypto -lssl"
           ./build-micro.sh
 
       - name: Build the phar
@@ -140,6 +171,13 @@ jobs:
           ref: master
           path: php-sdk-binary-tools
 
+      - name: Check out lwmbs
+        uses: actions/checkout@v4
+        with:
+          repository: dixyes/lwmbs
+          ref: 49e825a
+          path: lwmbs
+
       - name: Prepare sources
         shell: pwsh
         run: |
@@ -162,19 +200,27 @@ jobs:
           }
           Pop-Location
 
-      - name: Build micro.sfx
-        shell: ..\..\php-sdk-binary-tools\phpsdk-starter.bat -c vs18 -a x64 -t {0}
-        working-directory: build/php-src
-        run: |
-          buildconf.bat
-          configure.bat --disable-all --enable-micro=yes --enable-zts --disable-cgi --disable-cli --disable-phpdbg --enable-phar --with-ffi --enable-swow --disable-swow-curl --disable-swow-ssl --disable-swow-pdo-pgsql
-          nmake micro
-
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
           coverage: none
+
+      - name: Build static dependencies
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build | Out-Null
+          Set-Location build
+          php ..\lwmbs\fetch_source.php "zlib,openssl,nghttp2,libssh2,curl,libffi" "" --phpVer=8.4 --versionFile=./versionFile
+          php ..\lwmbs\build_libs.php "zlib,openssl,nghttp2,libssh2,curl,libffi" --phpBinarySDKDir="${{ github.workspace }}\php-sdk-binary-tools" --vsVer=17 --arch=x64 --fresh
+
+      - name: Build micro.sfx
+        shell: ..\..\php-sdk-binary-tools\phpsdk-starter.bat -c vs18 -a x64 -t {0}
+        working-directory: build/php-src
+        run: |
+          buildconf.bat
+          configure.bat --disable-all --enable-micro=yes --enable-zts --disable-cgi --disable-cli --disable-phpdbg --enable-phar --with-ffi --with-php-build=..\deps --enable-swow --enable-swow-curl --enable-swow-ssl --disable-swow-pdo-pgsql
+          nmake micro LIBS_MICRO="libssl.lib libcrypto.lib libcurl.lib libssh2.lib nghttp2.lib zlibstatic.lib libffi.lib crypt32.lib wldap32.lib ws2_32.lib shell32.lib"
 
       - name: Build the phar
         run: php -d phar.readonly=0 build-phar.php

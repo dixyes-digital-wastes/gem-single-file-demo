@@ -161,7 +161,7 @@ jobs:
 
   windows:
     name: Windows x86_64
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -202,6 +202,10 @@ jobs:
               Get-Content $path | patch -p1
             }
           }
+          # PHP 8.7 normally requires VS18; this branch keeps VS17 alive until
+          # lwmbs can build the final VS18 toolchain.
+          $confutils = Join-Path $PWD 'win32/build/confutils.js'
+          (Get-Content $confutils) -replace 'version < 1950', 'version < 1930' | Set-Content $confutils
           Pop-Location
 
       - name: Set up PHP
@@ -221,7 +225,7 @@ jobs:
           php ..\lwmbs\build_libs.php "zlib,openssl,nghttp2,libssh2,curl,libffi" --phpBinarySDKDir="${{ github.workspace }}\php-sdk-binary-tools" --vsVer=17 --arch=x64 --fresh
 
       - name: Build micro.sfx
-        shell: ..\..\php-sdk-binary-tools\phpsdk-starter.bat -c vs18 -a x64 -t {0}
+        shell: ..\..\php-sdk-binary-tools\phpsdk-starter.bat -c vs17 -a x64 -t {0}
         working-directory: build/php-src
         run: |
           buildconf.bat

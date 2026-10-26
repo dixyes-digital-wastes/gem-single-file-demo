@@ -16,7 +16,7 @@ concurrency:
 jobs:
   linux:
     name: Linux x86_64
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential gcc-14 autoconf bison re2c patch pkg-config \
+            build-essential autoconf bison re2c patch pkg-config \
             libffi-dev zlib1g-dev
 
       - name: Set up PHP
@@ -37,8 +37,6 @@ jobs:
           coverage: none
 
       - name: Build micro.sfx
-        env:
-          CC: gcc-14
         run: ./build-micro.sh
 
       - name: Build the phar
@@ -59,9 +57,9 @@ jobs:
           path: gem-demo-linux-x86_64
           if-no-files-found: error
 
-  macos-x86_64:
-    name: macOS x86_64
-    runs-on: macos-13
+  macos:
+    name: macOS
+    runs-on: macos-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -69,66 +67,9 @@ jobs:
           submodules: recursive
 
       - name: Install build dependencies
-        run: brew install autoconf bison re2c pkg-config
-
-      - name: Build micro.sfx
-        env:
-          CC: clang
-        run: ./build-micro.sh
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: micro-macos-x86_64
-          path: build/php-src/sapi/micro/micro.sfx
-          if-no-files-found: error
-
-  macos-arm64:
-    name: macOS arm64
-    runs-on: macos-14
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install build dependencies
-        run: brew install autoconf bison re2c pkg-config
-
-      - name: Build micro.sfx
-        env:
-          CC: clang
-        run: ./build-micro.sh
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: micro-macos-arm64
-          path: build/php-src/sapi/micro/micro.sfx
-          if-no-files-found: error
-
-  macos-universal:
-    name: macOS universal
-    needs: [macos-x86_64, macos-arm64]
-    runs-on: macos-14
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: micro-macos-x86_64
-          path: build/micro-x86_64
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: micro-macos-arm64
-          path: build/micro-arm64
-
-      - name: Create universal micro.sfx
         run: |
-          lipo -create build/micro-x86_64/micro.sfx build/micro-arm64/micro.sfx -output build/micro.sfx
-          lipo -info build/micro.sfx
+          brew install autoconf bison re2c pkg-config
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -136,30 +77,34 @@ jobs:
           php-version: '8.5'
           coverage: none
 
+      - name: Build micro.sfx
+        env:
+          CC: clang
+        run: ./build-micro.sh
+
       - name: Build the phar
         run: php -d phar.readonly=0 build-phar.php
 
       - name: Build the demo binary
         env:
-          SFX: build/micro.sfx
-          TARGET: gem-demo-macos-universal
+          TARGET: gem-demo-macos
         run: ./build-demo.sh
 
       - name: Smoke test
         run: |
-          ./gem-demo-macos-universal version
-          ./gem-demo-macos-universal gemm 256 2
-          ./gem-demo-macos-universal gemv q8_0 64 128 2
+          ./gem-demo-macos version
+          ./gem-demo-macos gemm 256 2
+          ./gem-demo-macos gemv q8_0 64 128 2
 
       - uses: actions/upload-artifact@v4
         with:
-          name: gem-demo-macos-universal
-          path: gem-demo-macos-universal
+          name: gem-demo-macos
+          path: gem-demo-macos
           if-no-files-found: error
 
   windows:
     name: Windows x86_64
-    runs-on: windows-2022
+    runs-on: windows-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4

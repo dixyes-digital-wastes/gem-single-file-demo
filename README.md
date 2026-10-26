@@ -144,8 +144,8 @@ build script.
 ## Continuous integration
 
 `.github/workflows/build.yml` has separate Linux, macOS and Windows jobs.
-Linux is the reference build. The macOS universal package combines x86_64 and
-arm64 micro artifacts with `lipo`. The Windows job is still being brought up.
+Linux is the reference build. The macOS job builds the native runner
+architecture. The Windows job is still being brought up.
 
 ## Limitations
 

@@ -1,0 +1,88 @@
+From 54b5f7cf0c5e2796d62ecaf0c280d0c7e53be1e7 Mon Sep 17 00:00:00 2001
+From: lazerg <lazerg2@gmail.com>
+Date: Sat, 24 Oct 2026 13:31:59 +0500
+Subject: [PATCH] Fix GH-24634: Tracing JIT reads a stale stack slot at a side
+ exit
+
+---
+ ext/opcache/jit/zend_jit.c         | 11 ++++----
+ ext/opcache/tests/jit/gh24634.phpt | 44 ++++++++++++++++++++++++++++++
+ 2 files changed, 50 insertions(+), 5 deletions(-)
+ create mode 100644 ext/opcache/tests/jit/gh24634.phpt
+
+diff --git a/ext/opcache/jit/zend_jit.c b/ext/opcache/jit/zend_jit.c
+index 679b7db269f..7d8bf9d3420 100644
+--- a/ext/opcache/jit/zend_jit.c
++++ b/ext/opcache/jit/zend_jit.c
+@@ -159,12 +159,13 @@ static bool zend_ssa_is_last_use(const zend_op_array *op_array, const zend_ssa *
+ 	}
+ 
+ 	next_use = zend_ssa_next_use(ssa->ops, var, use);
+-	if (next_use < 0) {
+-		return 1;
+-	} else if (zend_ssa_is_no_val_use(op_array->opcodes + next_use, ssa->ops + next_use, var)) {
+-		return 1;
++	while (next_use >= 0) {
++		if (!zend_ssa_is_no_val_use(op_array->opcodes + next_use, ssa->ops + next_use, var)) {
++			return 0;
++		}
++		next_use = zend_ssa_next_use(ssa->ops, var, next_use);
+ 	}
+-	return 0;
++	return 1;
+ }
+ 
+ static int zend_jit_is_constant_cmp_long_long(const zend_op  *opline,
+diff --git a/ext/opcache/tests/jit/gh24634.phpt b/ext/opcache/tests/jit/gh24634.phpt
+new file mode 100644
+index 00000000000..79c47372189
+--- /dev/null
++++ b/ext/opcache/tests/jit/gh24634.phpt
+@@ -0,0 +1,44 @@
++--TEST--
++GH-24634 (Tracing JIT reads a stale stack slot at a side exit)
++--EXTENSIONS--
++opcache
++--INI--
++opcache.enable=1
++opcache.enable_cli=1
++opcache.file_update_protection=0
++opcache.jit_buffer_size=64M
++opcache.jit=tracing
++opcache.jit_hot_loop=1
++opcache.jit_hot_func=1
++opcache.jit_hot_return=1
++opcache.jit_hot_side_exit=1
++--FILE--
++<?php
++function f(int $x) {
++    $e = $x & 3;
++    $m = $x & 4;
++    if ($e === 0) {
++        if ($m === 0) {
++            $r = 0;
++        } else {
++            $e = 100;
++            while ($m < 16) {
++                $m <<= 1;
++                $e--;
++            }
++            $r = $e;
++        }
++    } else {
++        $r = $e + 10;
++    }
++    return $r;
++}
++
++$out = [];
++for ($i = 0; $i < 8; $i++) {
++    $out[] = f($i);
++}
++echo implode(" ", $out), "\n";
++?>
++--EXPECT--
++0 11 12 13 98 11 12 13
+-- 
+2.56.0
+

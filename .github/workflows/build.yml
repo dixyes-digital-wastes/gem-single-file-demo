@@ -1,0 +1,88 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    if: matrix.enabled
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-24.04
+            enabled: true
+            artifact: gem-demo-linux-x86_64
+          # Placeholder: the macOS universal build needs its own toolchain and
+          # SFX handling before it can run here.
+          - name: macos-universal
+            os: macos-14
+            enabled: false
+            artifact: gem-demo-macos-universal
+          # Placeholder: the Windows build needs the win32 micro patches and a
+          # PE resource for the SFX size before it can run here.
+          - name: windows-x86_64
+            os: windows-2022
+            enabled: false
+            artifact: gem-demo-windows-x86_64.exe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential gcc-14 autoconf bison re2c patch pkg-config \
+            libffi-dev zlib1g-dev
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Build the micro SAPI
+        if: runner.os == 'Linux'
+        env:
+          CC: gcc-14
+        run: ./build-micro.sh
+
+      - name: Build the phar
+        if: runner.os == 'Linux'
+        run: php -d phar.readonly=0 build-phar.php
+
+      - name: Build the demo binary
+        if: runner.os == 'Linux'
+        run: ./build-demo.sh
+
+      - name: Smoke test
+        if: runner.os == 'Linux'
+        run: |
+          ./gem-demo-linux-x86_64 version
+          ./gem-demo-linux-x86_64 gemm 256 2
+          ./gem-demo-linux-x86_64 gemv q8_0 64 128 2
+
+      - name: Upload the demo binary
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error

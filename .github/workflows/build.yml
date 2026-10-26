@@ -14,25 +14,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
+  linux:
+    name: Linux x86_64
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: linux-x86_64
-            os: ubuntu-24.04
-            artifact: gem-demo-linux-x86_64
-          # Add macOS and Windows entries here once their build steps exist.
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Install build dependencies
-        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -45,31 +36,196 @@ jobs:
           php-version: '8.5'
           coverage: none
 
-      - name: Build the micro SAPI
-        if: runner.os == 'Linux'
+      - name: Build micro.sfx
         env:
           CC: gcc-14
         run: ./build-micro.sh
 
       - name: Build the phar
-        if: runner.os == 'Linux'
         run: php -d phar.readonly=0 build-phar.php
 
       - name: Build the demo binary
-        if: runner.os == 'Linux'
         run: ./build-demo.sh
 
       - name: Smoke test
-        if: runner.os == 'Linux'
         run: |
           ./gem-demo-linux-x86_64 version
           ./gem-demo-linux-x86_64 gemm 256 2
           ./gem-demo-linux-x86_64 gemv q8_0 64 128 2
 
-      - name: Upload the demo binary
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
+          name: gem-demo-linux-x86_64
+          path: gem-demo-linux-x86_64
+          if-no-files-found: error
+
+  macos-x86_64:
+    name: macOS x86_64
+    runs-on: macos-13
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: brew install autoconf bison re2c pkg-config
+
+      - name: Build micro.sfx
+        env:
+          CC: clang
+        run: ./build-micro.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: micro-macos-x86_64
+          path: build/php-src/sapi/micro/micro.sfx
+          if-no-files-found: error
+
+  macos-arm64:
+    name: macOS arm64
+    runs-on: macos-14
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: brew install autoconf bison re2c pkg-config
+
+      - name: Build micro.sfx
+        env:
+          CC: clang
+        run: ./build-micro.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: micro-macos-arm64
+          path: build/php-src/sapi/micro/micro.sfx
+          if-no-files-found: error
+
+  macos-universal:
+    name: macOS universal
+    needs: [macos-x86_64, macos-arm64]
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: micro-macos-x86_64
+          path: build/micro-x86_64
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: micro-macos-arm64
+          path: build/micro-arm64
+
+      - name: Create universal micro.sfx
+        run: |
+          lipo -create build/micro-x86_64/micro.sfx build/micro-arm64/micro.sfx -output build/micro.sfx
+          lipo -info build/micro.sfx
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Build the phar
+        run: php -d phar.readonly=0 build-phar.php
+
+      - name: Build the demo binary
+        env:
+          SFX: build/micro.sfx
+          TARGET: gem-demo-macos-universal
+        run: ./build-demo.sh
+
+      - name: Smoke test
+        run: |
+          ./gem-demo-macos-universal version
+          ./gem-demo-macos-universal gemm 256 2
+          ./gem-demo-macos-universal gemv q8_0 64 128 2
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gem-demo-macos-universal
+          path: gem-demo-macos-universal
+          if-no-files-found: error
+
+  windows:
+    name: Windows x86_64
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Check out the PHP build tools
+        uses: actions/checkout@v4
+        with:
+          repository: php/php-sdk-binary-tools
+          ref: master
+          path: php-sdk-binary-tools
+
+      - name: Prepare sources
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $build = Join-Path $PWD 'build'
+          New-Item -ItemType Directory -Force $build | Out-Null
+          Copy-Item 'third_party/php-src' (Join-Path $build 'php-src') -Recurse
+          Remove-Item (Join-Path $build 'php-src/.git') -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item 'third_party/micro' (Join-Path $build 'php-src/sapi/micro') -Recurse
+          Remove-Item (Join-Path $build 'php-src/sapi/micro/.git') -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item 'third_party/swow/ext' (Join-Path $build 'php-src/ext/swow') -Recurse
+          Remove-Item (Join-Path $build 'php-src/ext/swow/.git') -Recurse -Force -ErrorAction SilentlyContinue
+          Push-Location (Join-Path $build 'php-src')
+          patch -p1 -i (Join-Path $PWD '..\..\patches\php-jit-24635.patch')
+          foreach ($patch in 'cli_checks_87', 'vcruntime140_84', 'win32_85', 'zend_stream', 'phar_86', 'static_extensions_win32_86') {
+            $path = "sapi/micro/patches/$patch.patch"
+            if (Test-Path $path) {
+              Get-Content $path | patch -p1
+            }
+          }
+          Pop-Location
+
+      - name: Build micro.sfx
+        shell: cmd
+        working-directory: build/php-src
+        run: |
+          call ..\..\php-sdk-binary-tools\phpsdk-vs18-x64.bat
+          buildconf.bat
+          configure.bat --disable-all --enable-micro=yes --enable-zts --disable-cgi --disable-cli --disable-phpdbg --enable-phar --with-ffi --with-zlib --with-php-build=%~dp0..\..\deps.8 --enable-swow --disable-swow-curl --disable-swow-ssl --disable-swow-pdo-pgsql
+          nmake micro
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Build the phar
+        run: php -d phar.readonly=0 build-phar.php
+
+      - name: Build the demo binary
+        shell: pwsh
+        run: ./build-demo.ps1 -Sfx build/php-src/x64/Release_TS/micro.sfx -Phar build/gem.phar -Target gem-demo-windows-x86_64.exe
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          ./gem-demo-windows-x86_64.exe version
+          ./gem-demo-windows-x86_64.exe gemm 256 2
+          ./gem-demo-windows-x86_64.exe gemv q8_0 64 128 2
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gem-demo-windows-x86_64
+          path: gem-demo-windows-x86_64.exe
           if-no-files-found: error

@@ -10,7 +10,13 @@ set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 build=$root/build
 tree=$build/php-src
-jobs=${JOBS:-$(nproc)}
+if [ -n "${JOBS:-}" ]; then
+    jobs=$JOBS
+elif command -v nproc >/dev/null 2>&1; then
+    jobs=$(nproc)
+else
+    jobs=$(sysctl -n hw.ncpu)
+fi
 
 fail() {
     echo "build-micro: $*" >&2
@@ -53,7 +59,8 @@ rm -rf "$tree/ext/toy/.git"
 # ext-toy points its codegen headers at $abs_srcdir, which is the PHP source
 # root in an in-tree build. @ext_srcdir@ makes the path follow the extension.
 # Only the copy under build/ is rewritten.
-sed -i 's#-I\$abs_srcdir/codegen/include#-I@ext_srcdir@/codegen/include#' "$tree/ext/toy/config.m4"
+sed -i.bak 's#-I\$abs_srcdir/codegen/include#-I@ext_srcdir@/codegen/include#' "$tree/ext/toy/config.m4"
+rm -f "$tree/ext/toy/config.m4.bak"
 grep -q '@ext_srcdir@/codegen/include' "$tree/ext/toy/config.m4" ||
     fail "ext-toy codegen header path was not rewritten"
 

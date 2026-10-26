@@ -12,9 +12,9 @@ set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 build=$root/build
-sfx=$build/php-src/sapi/micro/micro.sfx
+sfx=${SFX:-$build/php-src/sapi/micro/micro.sfx}
 phar=${GEM_PHAR:-$build/gem.phar}
-target=$root/gem-demo-linux-x86_64
+target=${TARGET:-$root/gem-demo-$(uname -s | tr "[:upper:]" "[:lower:]")-$(uname -m)}
 
 fail() {
     echo "build-demo: $*" >&2
@@ -32,6 +32,7 @@ opcache.enable_cli=1
 opcache.jit=tracing
 opcache.jit_buffer_size=64M
 ffi.enable=1
+memory_limit=-1
 register_argc_argv=0
 '
 
@@ -52,8 +53,8 @@ length=${#ini}
 
 chmod 0755 "$target"
 
-expected=$(( $(stat -c %s "$sfx") + 8 + length + $(stat -c %s "$phar") ))
-actual=$(stat -c %s "$target")
+expected=$(( $(wc -c < "$sfx") + 8 + length + $(wc -c < "$phar") ))
+actual=$(wc -c < "$target")
 [ "$actual" -eq "$expected" ] || fail "size mismatch: $actual != $expected"
 
 echo "build-demo: $target ($actual bytes, ini $length bytes)"

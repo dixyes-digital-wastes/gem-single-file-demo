@@ -136,7 +136,7 @@ jobs:
           export CFLAGS="-I$PWD/build/include"
           export LDFLAGS="-L$PWD/build/lib"
           export EXTRA_LIBS="-Wl,-all_load $(find "$PWD/build/lib" -name '*.a' -print | tr '\n' ' ') -lresolv"
-          export STATIC_LIBS_TAIL="-L$PWD/build/lib -lnghttp2 -lssh2 -lcrypto -lssl"
+          export STATIC_LIBS_TAIL="-L$PWD/build/lib -lnghttp2 -lssh2 -lcrypto -lssl -framework CoreFoundation -framework SystemConfiguration"
           ./build-micro.sh
 
       - name: Build the phar

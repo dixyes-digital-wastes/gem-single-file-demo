@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [main]
+    branches: [latest]
   pull_request:
   workflow_dispatch:
 
@@ -16,7 +16,6 @@ concurrency:
 jobs:
   build:
     name: ${{ matrix.name }}
-    if: matrix.enabled
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     strategy:
@@ -25,20 +24,8 @@ jobs:
         include:
           - name: linux-x86_64
             os: ubuntu-24.04
-            enabled: true
             artifact: gem-demo-linux-x86_64
-          # Placeholder: the macOS universal build needs its own toolchain and
-          # SFX handling before it can run here.
-          - name: macos-universal
-            os: macos-14
-            enabled: false
-            artifact: gem-demo-macos-universal
-          # Placeholder: the Windows build needs the win32 micro patches and a
-          # PE resource for the SFX size before it can run here.
-          - name: windows-x86_64
-            os: windows-2022
-            enabled: false
-            artifact: gem-demo-windows-x86_64.exe
+          # Add macOS and Windows entries here once their build steps exist.
     steps:
       - uses: actions/checkout@v4
         with:

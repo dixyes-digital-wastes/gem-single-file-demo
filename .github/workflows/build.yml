@@ -161,7 +161,7 @@ jobs:
 
   windows:
     name: Windows x86_64
-    runs-on: windows-2022
+    runs-on: windows-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -182,9 +182,11 @@ jobs:
           ref: 49e825a087d60b544724ee9afd5733a5718da4c1
           path: lwmbs
 
-      - name: Patch lwmbs zlib naming
+      - name: Patch lwmbs
         shell: pwsh
-        run: git -C lwmbs apply (Resolve-Path 'patches/lwmbs-zlib-win32.patch')
+        run: |
+          git -C lwmbs apply (Resolve-Path 'patches/lwmbs-vs18.patch')
+          git -C lwmbs apply (Resolve-Path 'patches/lwmbs-zlib-win32.patch')
 
       - name: Prepare sources
         shell: pwsh
@@ -206,10 +208,6 @@ jobs:
               Get-Content $path | patch -p1
             }
           }
-          # PHP 8.7 normally requires VS18; this branch keeps VS17 alive until
-          # lwmbs can build the final VS18 toolchain.
-          $confutils = Join-Path $PWD 'win32/build/confutils.js'
-          (Get-Content $confutils) -replace 'version < 1950', 'version < 1930' | Set-Content $confutils
           Pop-Location
 
       - name: Set up PHP
@@ -226,10 +224,10 @@ jobs:
           New-Item -ItemType Directory -Force build | Out-Null
           Set-Location build
           php ..\lwmbs\fetch_source.php "zlib,openssl,nghttp2,libssh2,curl,libffi" "" --phpVer=8.4 --versionFile=./versionFile
-          php ..\lwmbs\build_libs.php "zlib,openssl,nghttp2,libssh2,curl,libffi" --phpBinarySDKDir="${{ github.workspace }}\php-sdk-binary-tools" --vsVer=17 --arch=x64 --fresh
+          php ..\lwmbs\build_libs.php "zlib,openssl,nghttp2,libssh2,curl,libffi" --phpBinarySDKDir="${{ github.workspace }}\php-sdk-binary-tools" --vsVer=18 --arch=x64 --fresh
 
       - name: Build micro.sfx
-        shell: ..\..\php-sdk-binary-tools\phpsdk-starter.bat -c vs17 -a x64 -t {0}
+        shell: ..\..\php-sdk-binary-tools\phpsdk-starter.bat -c vs18 -a x64 -t {0}
         working-directory: build/php-src
         run: |
           buildconf.bat

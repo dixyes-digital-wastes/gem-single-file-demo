@@ -5,6 +5,33 @@ declare(strict_types=1);
 use Dixyes\Gem\Thread\ThreadConfig;
 
 /*
+ * Windows consoles start with the ANSI code page, so UTF-8 writes turn into
+ * mojibake and partial multibyte writes can fail. Switch both directions to
+ * UTF-8 and enable the VT escape sequences used by the terminal UI.
+ */
+if (PHP_OS_FAMILY === 'Windows' && class_exists(FFI::class)) {
+    try {
+        $kernel32 = FFI::cdef(
+            'void *GetStdHandle(unsigned int handle);
+             int GetConsoleMode(void *handle, unsigned int *mode);
+             int SetConsoleMode(void *handle, unsigned int mode);
+             unsigned int SetConsoleOutputCP(unsigned int code_page);
+             unsigned int SetConsoleCP(unsigned int code_page);',
+            'kernel32.dll'
+        );
+        $kernel32->SetConsoleOutputCP(65001);
+        $kernel32->SetConsoleCP(65001);
+        $mode = $kernel32->new('unsigned int');
+        $stdout = $kernel32->GetStdHandle(0xFFFFFFF5);
+        if ($stdout !== null && $kernel32->GetConsoleMode($stdout, FFI::addr($mode))) {
+            $kernel32->SetConsoleMode($stdout, $mode->c | 0x0004);
+        }
+    } catch (Throwable) {
+        // A redirected or non-console stdout has no code page to change.
+    }
+}
+
+/*
  * Entry point of the single-file demo.
  *
  * The binary is the micro SAPI followed by an INI header and this phar. micro

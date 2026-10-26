@@ -1,0 +1,15 @@
+[submodule "third_party/php-src"]
+	path = third_party/php-src
+	url = https://github.com/php/php-src
+[submodule "third_party/micro"]
+	path = third_party/micro
+	url = https://github.com/dixyes/phpmicro
+[submodule "third_party/swow"]
+	path = third_party/swow
+	url = https://github.com/swow/swow
+[submodule "third_party/gem"]
+	path = third_party/gem
+	url = https://github.com/dixyes-digital-wastes/gem
+[submodule "third_party/ext-toy"]
+	path = third_party/ext-toy
+	url = https://github.com/dixyes-digital-wastes/ext-toy

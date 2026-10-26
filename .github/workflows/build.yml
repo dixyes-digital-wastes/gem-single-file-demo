@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dixyes/lwmbs
-          ref: d5aa50cba3bcfd1106a7ec28fc548eb284b4a06c
+          ref: 49e825a087d60b544724ee9afd5733a5718da4c1
           path: lwmbs
 
       - name: Install build dependencies
@@ -99,7 +99,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dixyes/lwmbs
-          ref: d5aa50cba3bcfd1106a7ec28fc548eb284b4a06c
+          ref: 49e825a087d60b544724ee9afd5733a5718da4c1
           path: lwmbs
 
       - name: Set up PHP
@@ -179,8 +179,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dixyes/lwmbs
-          ref: d5aa50cba3bcfd1106a7ec28fc548eb284b4a06c
+          ref: 49e825a087d60b544724ee9afd5733a5718da4c1
           path: lwmbs
+
+      - name: Patch lwmbs zlib naming
+        shell: pwsh
+        run: git -C lwmbs apply (Resolve-Path 'patches/lwmbs-zlib-win32.patch')
 
       - name: Prepare sources
         shell: pwsh

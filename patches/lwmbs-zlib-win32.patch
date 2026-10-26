@@ -1,0 +1,31 @@
+commit d5aa50cba3bcfd1106a7ec28fc548eb284b4a06c
+Author: Yun Dou <dixyes@gmail.com>
+Date:   Mon Oct 26 17:13:59 2026 +0800
+
+    Handle the zlib 1.3 static library name
+    
+    Assisted-by: DeepSeek Harness/DeepSeek-V4.1-Flash
+
+diff --git a/windows/libraries/zlib.php b/windows/libraries/zlib.php
+index 4e118da..1a02bd0 100644
+--- a/windows/libraries/zlib.php
++++ b/windows/libraries/zlib.php
+@@ -62,9 +62,14 @@ class Libzlib extends Library
+             throw new Exception("failed to build {$this->name}");
+         }
+ 
+-        //copy('deps/lib/zlibstatic.lib', 'deps/lib/zlib.lib');
+-        copy('deps/lib/zlibstatic.lib', 'deps/lib/zlib_a.lib');
+-        unlink('deps/bin/zlib.dll');
+-        unlink('deps/lib/zlib.lib');
++        // zlib 1.3.2 installs the static library as zs.lib; older releases
++        // used zlibstatic.lib. Both names feed the PHP and OpenSSL checks.
++        $static = file_exists('deps/lib/zs.lib') ? 'deps/lib/zs.lib' : 'deps/lib/zlibstatic.lib';
++        copy($static, 'deps/lib/zlib_a.lib');
++        copy($static, 'deps/lib/zlibstatic.lib');
++        @unlink('deps/bin/zlib.dll');
++        @unlink('deps/bin/z.dll');
++        @unlink('deps/lib/zlib.lib');
++        @unlink('deps/lib/z.lib');
+     }
+ }

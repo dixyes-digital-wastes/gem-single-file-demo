@@ -136,6 +136,7 @@ if ($command === 'version') {
     printf("PHP: %s (%s)\n", PHP_VERSION, PHP_ZTS ? 'ZTS' : 'NTS');
     printf("JIT: %s\n", $jit);
     printf("FFI: %s\n", extension_loaded('ffi') ? sprintf('on (ffi.enable=%s)', ini_get('ffi.enable')) : 'off');
+    printf("curl: %s\n", extension_loaded('curl') ? 'on' : 'missing');
     printf("swow: %s\n", extension_loaded('swow') ? (phpversion('swow') ?: 'loaded') : 'missing');
     printf("toy: %s\n", extension_loaded('toy') ? (phpversion('toy') ?: 'loaded') : 'missing');
     printf("default threads: %s\n", $threads);

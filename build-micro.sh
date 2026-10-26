@@ -68,6 +68,12 @@ cd "$tree"
 echo "build-micro: running buildconf"
 ./buildconf --force
 
+curl_args=()
+if [ "${WITH_CURL:-0}" = 1 ]; then
+    echo "build-micro: enabling the curl extension"
+    curl_args+=(--with-curl)
+fi
+
 if [ "${SWOW_CURL:-0}" = 1 ]; then
     echo "build-micro: enabling swow curl"
     swow_args+=(--enable-swow-curl)
@@ -97,6 +103,7 @@ echo "build-micro: running configure"
     --enable-swow \
     --disable-swow-pdo-pgsql \
     --enable-toy \
+    "${curl_args[@]}" \
     "${swow_args[@]}"
 
 if [ -n "${STATIC_LIBS_TAIL:-}" ]; then

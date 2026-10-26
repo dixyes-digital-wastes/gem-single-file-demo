@@ -60,6 +60,7 @@ jobs:
         env:
           SWOW_SSL: '1'
           SWOW_CURL: '1'
+          WITH_CURL: '1'
         run: |
           export PKG_CONFIG_PATH="$PWD/build/lib/pkgconfig"
           export CFLAGS="-I$PWD/build/include"
@@ -131,6 +132,7 @@ jobs:
           CC: clang
           SWOW_SSL: '1'
           SWOW_CURL: '1'
+          WITH_CURL: '1'
         run: |
           export PKG_CONFIG_PATH="$PWD/build/lib/pkgconfig"
           export CFLAGS="-I$PWD/build/include"
@@ -231,7 +233,7 @@ jobs:
         working-directory: build/php-src
         run: |
           buildconf.bat
-          configure.bat --disable-all --enable-micro=yes --enable-zts --disable-cgi --disable-cli --disable-phpdbg --enable-phar --with-ffi --with-php-build=..\deps --enable-swow --enable-swow-curl --enable-swow-ssl --disable-swow-pdo-pgsql
+          configure.bat --disable-all --enable-micro=yes --enable-zts --disable-cgi --disable-cli --disable-phpdbg --enable-phar --with-ffi --with-php-build=..\deps --enable-curl --enable-swow --enable-swow-curl --enable-swow-ssl --disable-swow-pdo-pgsql
           nmake micro LIBS_MICRO="libssl.lib libcrypto.lib libcurl.lib libssh2.lib nghttp2.lib zlibstatic.lib libffi.lib crypt32.lib wldap32.lib ws2_32.lib shell32.lib"
 
       - name: Build the phar

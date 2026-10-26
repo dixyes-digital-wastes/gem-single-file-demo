@@ -141,12 +141,11 @@ jobs:
           Pop-Location
 
       - name: Build micro.sfx
-        shell: cmd
+        shell: ..\..\php-sdk-binary-tools\phpsdk-starter.bat -c vs18 -a x64 -t {0}
         working-directory: build/php-src
         run: |
-          call ..\..\php-sdk-binary-tools\phpsdk-vs18-x64.bat
           buildconf.bat
-          configure.bat --disable-all --enable-micro=yes --enable-zts --disable-cgi --disable-cli --disable-phpdbg --enable-phar --with-ffi --with-zlib --with-php-build=%~dp0..\..\deps.8 --enable-swow --disable-swow-curl --disable-swow-ssl --disable-swow-pdo-pgsql
+          configure.bat --disable-all --enable-micro=yes --enable-zts --disable-cgi --disable-cli --disable-phpdbg --enable-phar --with-ffi --enable-swow --disable-swow-curl --disable-swow-ssl --disable-swow-pdo-pgsql
           nmake micro
 
       - name: Set up PHP

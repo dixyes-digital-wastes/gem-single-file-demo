@@ -85,6 +85,7 @@ opcache.enable_cli=1
 opcache.jit=tracing
 opcache.jit_buffer_size=64M
 ffi.enable=1
+memory_limit=-1
 register_argc_argv=0
 ```
 
@@ -123,19 +124,33 @@ JIT: on (tracing)
 FFI: on (ffi.enable=1)
 swow: 2.0.0-dev
 toy: 0.1.0
-default threads: 12
+default threads: 4
 ```
+
+## Windows preview
+
+A Windows x86_64 preview is built from the same `micro.sfx` layout:
+
+```bat
+gem-demo-windows-x86_64.exe version
+gem-demo-windows-x86_64.exe gemm 256 2
+gem-demo-windows-x86_64.exe gemv q8_0 64 128 2
+```
+
+It includes ZTS, opcache tracing JIT, FFI, swow and toy. The Windows build
+uses the PHP SDK toolchain and MSVC; the preview does not yet have a checked-in
+build script.
 
 ## Continuous integration
 
-`.github/workflows/build.yml` builds and smoke tests the Linux x86_64 binary.
-The macOS universal and Windows jobs are matrix placeholders until their
-toolchains and payload handling exist.
+`.github/workflows/build.yml` has separate Linux, macOS and Windows jobs.
+Linux is the reference build. The macOS universal package combines x86_64 and
+arm64 micro artifacts with `lipo`. The Windows job is still being brought up.
 
 ## Limitations
 
-- Only the Linux x86_64 target is implemented.
+- Linux x86_64 is the reference target. Windows x86_64 has a working preview;
+  macOS universal is not finished.
 - PHP and its extensions are linked into the binary; libc, libm, libz and
   libffi are still resolved from the host system.
 - The unpacked payload needs a writable temporary directory.
-- The macOS universal and Windows targets are not implemented.

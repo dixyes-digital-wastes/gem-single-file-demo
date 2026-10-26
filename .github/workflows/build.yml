@@ -18,6 +18,8 @@ jobs:
     name: Linux x86_64
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -88,6 +90,8 @@ jobs:
     name: macOS
     runs-on: macos-latest
     timeout-minutes: 120
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -159,6 +163,8 @@ jobs:
     name: Windows x86_64
     runs-on: windows-latest
     timeout-minutes: 90
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:

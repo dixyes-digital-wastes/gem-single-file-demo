@@ -153,6 +153,7 @@ jobs:
 
       - name: Build micro.sfx
         env:
+          LIBS: -L${{ github.workspace }}/build/lib -lnghttp2 -lssh2 -lcrypto -lssl -framework CoreFoundation -framework SystemConfiguration
           SWOW_SSL: '1'
           SWOW_CURL: '1'
           WITH_CURL: '1'

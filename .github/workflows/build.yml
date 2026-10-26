@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dixyes/lwmbs
-          ref: 49e825a
+          ref: 49e825a087d60b544724ee9afd5733a5718da4c1
           path: lwmbs
 
       - name: Install build dependencies
@@ -97,7 +97,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dixyes/lwmbs
-          ref: 49e825a
+          ref: 49e825a087d60b544724ee9afd5733a5718da4c1
           path: lwmbs
 
       - name: Set up PHP
@@ -175,7 +175,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dixyes/lwmbs
-          ref: 49e825a
+          ref: 49e825a087d60b544724ee9afd5733a5718da4c1
           path: lwmbs
 
       - name: Prepare sources

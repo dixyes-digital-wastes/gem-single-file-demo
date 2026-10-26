@@ -60,16 +60,18 @@ jobs:
   macos:
     name: macOS
     runs-on: macos-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install build dependencies
-        run: |
-          brew install autoconf bison re2c pkg-config
-          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+      - name: Check out lwmbs
+        uses: actions/checkout@v4
+        with:
+          repository: dixyes/lwmbs
+          ref: 49e825a
+          path: lwmbs
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -77,10 +79,30 @@ jobs:
           php-version: '8.5'
           coverage: none
 
+      - name: Install build dependencies
+        run: |
+          brew install autoconf automake bison cmake flex re2c pkg-config
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+
+      - name: Build static dependencies
+        run: |
+          mkdir -p build
+          cd build
+          php ../lwmbs/build_libs.php \
+            "zlib,openssl,nghttp2,libssh2,curl,libffi" \
+            --arch="$(uname -m)" --fresh
+
       - name: Build micro.sfx
         env:
           CC: clang
-        run: ./build-micro.sh
+          SWOW_SSL: '1'
+          SWOW_CURL: '1'
+        run: |
+          export PKG_CONFIG_PATH="$PWD/build/lib/pkgconfig"
+          export CFLAGS="-I$PWD/build/include"
+          export LDFLAGS="-L$PWD/build/lib"
+          export EXTRA_LIBS="-Wl,-all_load $(find "$PWD/build/lib" -name '*.a' -print | tr '\n' ' ') -lresolv"
+          ./build-micro.sh
 
       - name: Build the phar
         run: php -d phar.readonly=0 build-phar.php

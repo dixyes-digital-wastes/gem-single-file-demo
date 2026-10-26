@@ -68,6 +68,19 @@ cd "$tree"
 echo "build-micro: running buildconf"
 ./buildconf --force
 
+if [ "${SWOW_CURL:-0}" = 1 ]; then
+    echo "build-micro: enabling swow curl"
+    swow_args+=(--enable-swow-curl)
+else
+    swow_args+=(--disable-swow-curl)
+fi
+if [ "${SWOW_SSL:-0}" = 1 ]; then
+    echo "build-micro: enabling swow ssl"
+    swow_args+=(--enable-swow-ssl)
+else
+    swow_args+=(--disable-swow-ssl)
+fi
+
 # opcache is unconditional since PHP 8.5, so only its JIT toggle is relevant.
 echo "build-micro: running configure"
 ./configure \
@@ -82,13 +95,16 @@ echo "build-micro: running configure"
     --with-zlib \
     --with-ffi \
     --enable-swow \
-    --disable-swow-curl \
     --disable-swow-pdo-pgsql \
-    --disable-swow-ssl \
-    --enable-toy
+    --enable-toy \
+    "${swow_args[@]}"
 
 echo "build-micro: running make -j$jobs micro"
-make -j"$jobs" micro
+make_args=(-j"$jobs" micro)
+if [ -n "${EXTRA_LIBS:-}" ]; then
+    make_args+=("EXTRA_LIBS=$EXTRA_LIBS")
+fi
+make "${make_args[@]}"
 
 [ -x "$tree/sapi/micro/micro.sfx" ] || fail "micro.sfx was not produced"
 echo "build-micro: $tree/sapi/micro/micro.sfx"

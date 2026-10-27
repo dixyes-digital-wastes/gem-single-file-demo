@@ -270,7 +270,12 @@ jobs:
       - name: Build micro.sfx
         shell: cmd
         working-directory: build/php-src
-        run: call "%GITHUB_WORKSPACE%\php-sdk-binary-tools\phpsdk-starter.bat" -c vs18 -a x64 -t %GITHUB_WORKSPACE%\windows-build.bat
+        run: |
+          call "%GITHUB_WORKSPACE%\php-sdk-binary-tools\phpsdk-starter.bat" -c vs18 -a x64 -t %GITHUB_WORKSPACE%\windows-build.bat
+          if not exist x64\Release_TS\micro.sfx (
+            echo micro.sfx was not produced, see the build output above
+            exit /b 1
+          )
 
       - name: Build the phar
         run: php -d phar.readonly=0 build-phar.php

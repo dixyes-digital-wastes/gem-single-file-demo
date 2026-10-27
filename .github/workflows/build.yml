@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
       - name: Check out lwmbs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: dixyes/lwmbs
           ref: 49e825a087d60b544724ee9afd5733a5718da4c1
@@ -45,7 +45,7 @@ jobs:
 
       - name: Cache static dependencies
         id: static-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build/src
@@ -93,7 +93,7 @@ jobs:
           ./gem-demo-linux-x86_64 gemm 256 2
           ./gem-demo-linux-x86_64 gemv q8_0 64 128 2
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gem-demo-linux-x86_64
           path: gem-demo-linux-x86_64
@@ -104,12 +104,12 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
       - name: Check out lwmbs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: dixyes/lwmbs
           ref: 49e825a087d60b544724ee9afd5733a5718da4c1
@@ -128,7 +128,7 @@ jobs:
 
       - name: Cache static dependencies
         id: static-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build/src
@@ -179,7 +179,7 @@ jobs:
           ./gem-demo-macos gemm 256 2
           ./gem-demo-macos gemv q8_0 64 128 2
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gem-demo-macos
           path: gem-demo-macos
@@ -190,19 +190,19 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
       - name: Check out the PHP build tools
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: php/php-sdk-binary-tools
           ref: master
           path: php-sdk-binary-tools
 
       - name: Check out lwmbs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: dixyes/lwmbs
           ref: 49e825a087d60b544724ee9afd5733a5718da4c1
@@ -244,7 +244,7 @@ jobs:
 
       - name: Cache static dependencies
         id: static-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build/src
@@ -281,7 +281,7 @@ jobs:
           ./gem-demo-windows-x86_64.exe gemm 256 2
           ./gem-demo-windows-x86_64.exe gemv q8_0 64 128 2
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gem-demo-windows-x86_64
           path: gem-demo-windows-x86_64.exe

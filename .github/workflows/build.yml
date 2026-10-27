@@ -230,9 +230,9 @@ jobs:
           Remove-Item (Join-Path $build 'php-src/ext/toy/.git') -Recurse -Force -ErrorAction SilentlyContinue
           Push-Location (Join-Path $build 'php-src')
           patch -p1 -i (Join-Path $PWD '..\..\patches\php-jit-24635.patch')
-          # the pinned ext-toy anchors its include paths at the extension
-          # directory, which an in-tree build never enters
-          patch -p1 -i (Join-Path $PWD '..\..\patches\ext-toy-windows-include.patch')
+          # the pinned ext-toy assumes a phpize build: retarget its include
+          # paths and reuse the global /utf-8 switch for the in-tree copy
+          patch -p1 -i (Join-Path $PWD '..\..\patches\ext-toy-windows-flags.patch')
           foreach ($patch in 'cli_checks_87', 'vcruntime140_84', 'win32_85', 'zend_stream', 'phar_86', 'static_extensions_win32_86') {
             $path = "sapi/micro/patches/$patch.patch"
             if (Test-Path $path) {

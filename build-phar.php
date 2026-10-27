@@ -37,8 +37,11 @@ if (!is_dir(dirname($target))) {
 }
 
 $files = [];
-foreach (['src', 'bin'] as $directory) {
+foreach (['src', 'bin', 'resources'] as $directory) {
     $base = $source . '/' . $directory;
+    if (!is_dir($base)) {
+        continue;
+    }
     $iterator = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS),
     );

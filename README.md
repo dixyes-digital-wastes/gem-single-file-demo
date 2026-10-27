@@ -66,6 +66,24 @@ Every other command is forwarded to the matching entry script of the gem
 package: `generate`, `chat`, `bench`, `model`, `verify` and `inspect`. The
 model commands need a GGUF file, no model is embedded in the binary.
 
+### Model download
+
+`model download` fetches the GGUF file. The demo links the curl extension and
+the phar carries the CA bundle, so https works without a system certificate
+store. The default source is `hf`; on a network that blocks Hugging Face, use
+`--source=modelscope` or pass `--proxy=URL`:
+
+```bash
+./gem-demo-linux-x86_64 model download --source=modelscope --quant=q8
+./gem-demo-linux-x86_64 model download --source=hf --proxy=http://127.0.0.1:7890 --quant=q8
+```
+
+The default proxy comes from `HTTPS_PROXY` or `ALL_PROXY`. Files land in
+`models/qwen3.5-0.8b` under the current directory; `model list` prints the
+names, sizes, hashes and URLs. If `version` reports `curl: missing`, the binary
+was built without the curl extension and `model download` fails with
+`The curl extension is required`.
+
 ## Binary layout
 
 ```
@@ -94,8 +112,8 @@ register_argc_argv=0
 from the empty query string. micro passes the real argument vector to the main
 script, so `$argv` is still populated there.
 
-The phar holds `src/`, `bin/` and a generated PSR-4 autoloader for
-`Dixyes\Gem\`. Entry scripts are stored without their shebang, and tests,
+The phar holds `src/`, `bin/`, `resources/` and a generated PSR-4 autoloader
+for `Dixyes\Gem\`. Entry scripts are stored without their shebang, and tests,
 models and phpunit are not packed. Entries are uncompressed so the demo needs
 no phar patch.
 
@@ -122,6 +140,7 @@ SAPI: micro
 PHP: 8.7.0-dev (ZTS)
 JIT: on (tracing)
 FFI: on (ffi.enable=1)
+curl: on
 swow: 2.0.0-dev
 toy: 0.1.0
 default threads: 4

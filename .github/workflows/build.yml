@@ -87,9 +87,14 @@ jobs:
       - name: Build the demo binary
         run: ./build-demo.sh
 
+      - name: Check the bundled CA bundle
+        run: |
+          php -r 'exit(isset((new Phar("build/gem.phar"))["resources/cacert.pem"]) ? 0 : 1);'
+
       - name: Smoke test
         run: |
-          ./gem-demo-linux-x86_64 version
+          ./gem-demo-linux-x86_64 version | tee version.txt
+          grep -qx 'curl: on' version.txt || { echo "the binary does not report curl: on"; exit 1; }
           ./gem-demo-linux-x86_64 gemm 256 2
           ./gem-demo-linux-x86_64 gemv q8_0 64 128 2
 
@@ -178,9 +183,14 @@ jobs:
           TARGET: gem-demo-macos
         run: ./build-demo.sh
 
+      - name: Check the bundled CA bundle
+        run: |
+          php -r 'exit(isset((new Phar("build/gem.phar"))["resources/cacert.pem"]) ? 0 : 1);'
+
       - name: Smoke test
         run: |
-          ./gem-demo-macos version
+          ./gem-demo-macos version | tee version.txt
+          grep -qx 'curl: on' version.txt || { echo "the binary does not report curl: on"; exit 1; }
           ./gem-demo-macos gemm 256 2
           ./gem-demo-macos gemv q8_0 64 128 2
 
@@ -285,6 +295,14 @@ jobs:
       - name: Build the phar
         run: php -d phar.readonly=0 build-phar.php
 
+      - name: Check the bundled CA bundle
+        shell: pwsh
+        run: |
+          php -r "exit(isset((new Phar('build/gem.phar'))['resources/cacert.pem']) ? 0 : 1);"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'the phar does not contain resources/cacert.pem'
+          }
+
       - name: Build the demo binary
         shell: pwsh
         run: ./build-demo.ps1 -Sfx build/php-src/x64/Release_TS/micro.sfx -Phar build/gem.phar -Target gem-demo-windows-x86_64.exe
@@ -300,6 +318,9 @@ jobs:
           }
           if (@($version -match '^JIT: on').Count -eq 0) {
             throw 'the Windows binary does not report JIT: on'
+          }
+          if (-not ($version -contains 'curl: on')) {
+            throw 'the Windows binary does not report curl: on'
           }
           ./gem-demo-windows-x86_64.exe gemm 256 2
           ./gem-demo-windows-x86_64.exe gemv q8_0 64 128 2

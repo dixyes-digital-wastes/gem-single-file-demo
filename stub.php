@@ -57,30 +57,17 @@ function gemBase(): string
     }
 
     /*
-     * Swow worker threads include the autoloader on their own, and the phar
-     * alias is only registered in the thread that called mapPhar. Write the
-     * payload to a real .phar file instead, every thread opens that by name.
+     * Swow worker threads include the autoloader on their own, and a phar
+     * alias belongs to the thread that called mapPhar. Address the payload
+     * through the running binary instead: micro registers the sfx as a phar
+     * archive for every thread that opens a phar:// url naming it.
      */
     if (!function_exists('micro_get_self_filename')) {
         fwrite(STDERR, "gem: the phar payload is not addressable\n");
         exit(1);
     }
 
-    $payload = sys_get_temp_dir() . '/gem-demo-' . getmypid() . '-' . bin2hex(random_bytes(4)) . '.phar';
-    $source = fopen(micro_get_self_filename(), 'rb');
-    $target = $source === false ? false : fopen($payload, 'wb');
-    if ($target === false || stream_copy_to_stream($source, $target) <= 0) {
-        fwrite(STDERR, "gem: cannot unpack the phar payload to {$payload}\n");
-        exit(1);
-    }
-    fclose($source);
-    fclose($target);
-
-    register_shutdown_function(static function () use ($payload): void {
-        @unlink($payload);
-    });
-
-    return $base = 'phar://' . $payload;
+    return $base = 'phar://' . micro_get_self_filename();
 }
 
 function gemUsage(string $program): string

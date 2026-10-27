@@ -106,14 +106,13 @@ themselves. A phar alias registered by `Phar::mapPhar` belongs to one thread,
 and the binary path has no `.phar` suffix, so such a thread cannot open the
 payload through the alias.
 
-The stub therefore writes the payload to a temporary `.phar` file and includes
-everything from that path, which every thread can open by name. The file is
-removed at shutdown; only its size (the phar, about 260 KB) is written, the
-payload itself stays part of the binary. `Phar::mapPhar` still publishes the
-payload as `gem.phar` for the main thread.
+The stub therefore addresses the payload as `phar://` plus the path of the
+running binary. micro registers that binary as a phar archive before it parses
+a `phar://` url naming it, in every thread, so the main thread and the workers
+read the archive in place. Nothing is extracted to a temporary file.
+`Phar::mapPhar` still publishes the payload as `gem.phar` for the main thread.
 
-The unpacking happens only under the micro SAPI. `php build/gem.phar <command>`
-keeps its own `.phar` path and writes nothing.
+`php build/gem.phar <command>` uses its own `.phar` path instead.
 
 ## Expected output
 
@@ -154,4 +153,3 @@ architecture. The Windows job is still being brought up.
   macOS universal is not finished.
 - PHP and its extensions are linked into the binary; libc, libm, libz and
   libffi are still resolved from the host system.
-- The unpacked payload needs a writable temporary directory.

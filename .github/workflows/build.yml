@@ -101,8 +101,12 @@ jobs:
 
   macos:
     name: macOS
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 120
+    env:
+      # the demo has to run on macOS 15; PHP picks the posix_spawn _np call
+      # when the deployment target is below 26
+      MACOSX_DEPLOYMENT_TARGET: '15.0'
     steps:
       - uses: actions/checkout@v7
         with:
@@ -135,7 +139,8 @@ jobs:
             build/lib
             build/include
             build/deps
-          key: static-${{ runner.os }}-lwmbs-49e825a
+          # rebuilt because the deployment target changed
+          key: static-${{ runner.os }}-lwmbs-49e825a-dep15
 
       - name: Build static dependencies
         if: steps.static-cache.outputs.cache-hit != 'true'

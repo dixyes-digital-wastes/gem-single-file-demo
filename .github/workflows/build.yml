@@ -226,8 +226,13 @@ jobs:
           Remove-Item (Join-Path $build 'php-src/sapi/micro/.git') -Recurse -Force -ErrorAction SilentlyContinue
           Copy-Item 'third_party/swow/ext' (Join-Path $build 'php-src/ext/swow') -Recurse
           Remove-Item (Join-Path $build 'php-src/ext/swow/.git') -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item 'third_party/ext-toy' (Join-Path $build 'php-src/ext/toy') -Recurse
+          Remove-Item (Join-Path $build 'php-src/ext/toy/.git') -Recurse -Force -ErrorAction SilentlyContinue
           Push-Location (Join-Path $build 'php-src')
           patch -p1 -i (Join-Path $PWD '..\..\patches\php-jit-24635.patch')
+          # the pinned ext-toy anchors its include paths at the extension
+          # directory, which an in-tree build never enters
+          patch -p1 -i (Join-Path $PWD '..\..\patches\ext-toy-windows-include.patch')
           foreach ($patch in 'cli_checks_87', 'vcruntime140_84', 'win32_85', 'zend_stream', 'phar_86', 'static_extensions_win32_86') {
             $path = "sapi/micro/patches/$patch.patch"
             if (Test-Path $path) {
@@ -277,7 +282,15 @@ jobs:
       - name: Smoke test
         shell: pwsh
         run: |
-          ./gem-demo-windows-x86_64.exe version
+          $ErrorActionPreference = 'Stop'
+          $version = @(& ./gem-demo-windows-x86_64.exe version | ForEach-Object { $_.Trim() })
+          $version
+          if (-not ($version -contains 'toy: 0.1.0')) {
+            throw 'the Windows binary does not report toy: 0.1.0'
+          }
+          if (@($version -match '^JIT: on').Count -eq 0) {
+            throw 'the Windows binary does not report JIT: on'
+          }
           ./gem-demo-windows-x86_64.exe gemm 256 2
           ./gem-demo-windows-x86_64.exe gemv q8_0 64 128 2
 

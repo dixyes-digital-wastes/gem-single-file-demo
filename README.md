@@ -12,12 +12,12 @@ The inputs are pinned as submodules:
 | `third_party/micro` | https://github.com/dixyes/phpmicro | `ccdfa7cc16f12aa86444a014b32cf501d2cf0697` |
 | `third_party/swow` | https://github.com/swow/swow | `691a2ced3072a7e3cd983a6863e74dc76169391c` |
 | `third_party/gem` | https://github.com/dixyes-digital-wastes/gem | `280b4e458bf055530eaa941e4bd4e2de38a5dc66` |
-| `third_party/ext-toy` | https://github.com/dixyes-digital-wastes/ext-toy | `739ab0275923f3bfdb3a18bf88b14a16d7ceef08` |
+| `third_party/ext-toy` | https://github.com/dixyes-digital-wastes/ext-toy | `d87c9109bad4b0cd562e7253a47b6ef23a0bfda9` |
 
 ## Requirements
 
 - Linux x86_64
-- gcc with C23 support, make, autoconf, bison, re2c, patch, pkg-config
+- gcc with C17 support, make, autoconf, bison, re2c, patch, pkg-config
 - libffi and zlib development headers
 - PHP 8.4 or newer with the phar extension for `build-phar.php`
 

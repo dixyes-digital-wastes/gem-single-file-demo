@@ -1,10 +1,10 @@
 diff --git a/ext/toy/config.w32 b/ext/toy/config.w32
 --- a/ext/toy/config.w32
 +++ b/ext/toy/config.w32
-@@ -17,5 +17,5 @@
+@@ -16,5 +16,5 @@
  	 */
  	EXTENSION("toy",
  		"module.c ops.c gdn.c codegen\\src\\asm.c codegen\\src\\emit.c codegen\\src\\isa.c codegen\\src\\q8_0.c codegen\\src\\ref.c arena.c kernel.c arena_config.c spec_cache.c tensor.c",
--		PHP_TOY_SHARED, "/std:clatest /source-charset:utf-8 /I . /FI tensor_msvc_compat.h /I codegen\\include");
-+		PHP_TOY_SHARED, "/std:clatest /utf-8 /I ext/toy /FI tensor_msvc_compat.h /I ext/toy/codegen/include");
+-		PHP_TOY_SHARED, "/std:c17 /source-charset:utf-8 /I " + configure_module_dirname + " /I " + configure_module_dirname + "\\codegen\\include /FI tensor_msvc_compat.h");
++		PHP_TOY_SHARED, "/std:c17 /utf-8 /I " + configure_module_dirname + " /I " + configure_module_dirname + "\\codegen\\include /FI tensor_msvc_compat.h");
  }

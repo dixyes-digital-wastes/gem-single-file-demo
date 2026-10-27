@@ -4,15 +4,16 @@ A single-file PHP demo binary for the gem GEMM and GEMV kernels. One executable
 contains the PHP micro SAPI, an INI block and a phar archive: no PHP shared
 objects, no extension directory, no model files.
 
-The inputs are pinned as submodules:
+The inputs are pinned as submodules; the exact revisions are recorded by the
+submodule gitlinks:
 
-| path | repository | commit |
+| path | repository | role |
 | --- | --- | --- |
-| `third_party/php-src` | https://github.com/php/php-src | `4a51e519d7199bd80be1660b167179386c76aa48` |
-| `third_party/micro` | https://github.com/dixyes/phpmicro | `ccdfa7cc16f12aa86444a014b32cf501d2cf0697` |
-| `third_party/swow` | https://github.com/swow/swow | `691a2ced3072a7e3cd983a6863e74dc76169391c` |
-| `third_party/gem` | https://github.com/dixyes-digital-wastes/gem | `280b4e458bf055530eaa941e4bd4e2de38a5dc66` |
-| `third_party/ext-toy` | https://github.com/dixyes-digital-wastes/ext-toy | `d87c9109bad4b0cd562e7253a47b6ef23a0bfda9` |
+| `third_party/php-src` | https://github.com/php/php-src | PHP runtime sources |
+| `third_party/micro` | https://github.com/dixyes/phpmicro | micro SAPI sources |
+| `third_party/swow` | https://github.com/swow/swow | coroutine and thread runtime |
+| `third_party/gem` | https://github.com/dixyes-digital-wastes/gem | GGUF inference and matrix kernels |
+| `third_party/ext-toy` | https://github.com/dixyes-digital-wastes/ext-toy | tensor kernels for the toy extension |
 
 ## Requirements
 
